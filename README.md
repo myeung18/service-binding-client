@@ -1,5 +1,7 @@
 # Service Binding Client for Service Binding Operator
 
+<a href="https://github.com/myeung18/service-binding-client/actions?query=workflow%3Aunit-tests"><img alt="service-binding-client unit tests status" src="https://github.com/myeung18/service-binding-client/workflows/unit-tests/badge.svg"></a>
+
 Install
 
 ```shell
