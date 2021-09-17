@@ -1,7 +1,7 @@
 package convert
 
 import (
-	"github.com/myeung18/service-binding-client/pkg/binding/fileconfig"
+	fileconfig "github.com/myeung18/service-binding-client/pkg/binding/internal/fileconfig"
 	"strings"
 )
 
@@ -18,18 +18,15 @@ func (m *MongoDBConverter) Convert(binding fileconfig.ServiceBinding) string {
 		prefix = "mongodb+srv://"
 	}
 
-	options := ""
-	if binding.Properties["options"] != "" {
-		options = "?" + binding.Properties["options"]
-	}
-
 	database := ""
-	if binding.Properties["database"] != "" {
-		database = "/" + binding.Properties["database"]
-	} else if options != "" {
-		database = "/" + options
+	if binding.Properties["options"] != "" {
+		database = "?" + binding.Properties["options"]
 	}
-	database += options
+	if binding.Properties["database"] != "" {
+		database = "/" + binding.Properties["database"] + database
+	} else if binding.Properties["options"] != "" {
+		database = "/" + database
+	}
 
 	return strings.Join([]string{prefix,
 		binding.Properties["username"], ":",
@@ -41,7 +38,8 @@ func (m *MongoDBConverter) Convert(binding fileconfig.ServiceBinding) string {
 // GetMongodbConnectionString returns mongoDB connection info. in a formatted string
 func GetMongodbConnectionString(bindingType string) (string, error) {
 	//get the binding available from file system
-	serviceBindings, err := fileconfig.ReadServiceBindingConfig()
+	bindingFileReader := fileconfig.NewBindingReader()
+	serviceBindings, err := bindingFileReader.ReadServiceBindingConfig()
 	if err != nil {
 		return "", err
 	}

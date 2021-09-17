@@ -3,6 +3,7 @@ package fileconfig
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -13,8 +14,22 @@ var bindingRootDirectory = GetBindingRootDirectory()
 const Provider = "provider"
 const BindingType = "type"
 
-func ReadServiceBindingConfig() ([]ServiceBinding, error) {
-	fs, err := os.Stat(bindingRootDirectory)
+type BindingFileReader struct {
+	ReadDir  func(filename string) ([]fs.FileInfo, error)
+	ReadFile func(filename string) ([]byte, error)
+	Stat     func(fileanme string) (fs.FileInfo, error)
+}
+
+func NewBindingReader() *BindingFileReader {
+	return &BindingFileReader{
+		ReadDir:  ioutil.ReadDir,
+		ReadFile: ioutil.ReadFile,
+		Stat:     os.Stat,
+	}
+}
+
+func (bfr *BindingFileReader) ReadServiceBindingConfig() ([]ServiceBinding, error) {
+	fs, err := bfr.Stat(bindingRootDirectory)
 	if err != nil {
 		return nil, err
 	}
@@ -22,7 +37,7 @@ func ReadServiceBindingConfig() ([]ServiceBinding, error) {
 		return nil, errors.New(fmt.Sprintf("Service Binding root %s is not a directory.", bindingRootDirectory))
 	}
 
-	lstFile, err := ioutil.ReadDir(bindingRootDirectory)
+	lstFile, err := bfr.ReadDir(bindingRootDirectory)
 	if err != nil {
 		return nil, err
 	}
@@ -31,7 +46,7 @@ func ReadServiceBindingConfig() ([]ServiceBinding, error) {
 	bindings := []ServiceBinding{}
 	for _, dir := range lstFile {
 		if dir.IsDir() {
-			provider, bindingType, content, err := readBindingContent(dir)
+			provider, bindingType, content, err := bfr.readBindingContent(dir)
 			if err != nil {
 				return nil, err
 			}
@@ -46,9 +61,9 @@ func ReadServiceBindingConfig() ([]ServiceBinding, error) {
 	return bindings, err
 }
 
-func readBindingContent(bindigDir os.FileInfo) (string, string, map[string]string, error) {
+func (bfr *BindingFileReader) readBindingContent(bindigDir os.FileInfo) (string, string, map[string]string, error) {
 	subDir := filepath.Join(bindingRootDirectory, bindigDir.Name())
-	subDirFiles, err := ioutil.ReadDir(subDir)
+	subDirFiles, err := bfr.ReadDir(subDir)
 	if err != nil {
 		return "", "", nil, err
 	}
@@ -59,7 +74,7 @@ func readBindingContent(bindigDir os.FileInfo) (string, string, map[string]strin
 		if prop.IsDir() || prop.Name()[0:1] == "." {
 			continue
 		}
-		buf, err := ioutil.ReadFile(filepath.Join(subDir, prop.Name()))
+		buf, err := bfr.ReadFile(filepath.Join(subDir, prop.Name()))
 		if err != nil {
 			return "", "", nil, err
 		}

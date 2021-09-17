@@ -12,13 +12,15 @@ import (
     github.com/myeung18/service-binding-client/pkg/binding/convert
 )
 
-# call
+// call
 string, err := convert.GetMongodbConnectionString("mongodb")
 if err != nil {
     fmt.Println(err)
 }
 fmt.Println(string)
+```
   
-# run 
+run locally
+```
 SERVICE_BINDING_ROOT=bindings go run ./<main.go>
 ```
