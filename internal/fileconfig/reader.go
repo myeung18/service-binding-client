@@ -1,7 +1,6 @@
 package fileconfig
 
 import (
-	"errors"
 	"fmt"
 	"io/fs"
 	"io/ioutil"
@@ -11,15 +10,21 @@ import (
 
 var bindingRootDirectory = GetBindingRootDirectory()
 
-const Provider = "provider"
-const BindingType = "type"
+const (
+	// Provider is the database provider name
+	Provider = "provider"
+	// BindingType is the database binding type e.g. mongodb, postgresql
+	BindingType = "type"
+)
 
+// BindingFileReader read the file config
 type BindingFileReader struct {
 	ReadDir  func(filename string) ([]fs.FileInfo, error)
 	ReadFile func(filename string) ([]byte, error)
 	Stat     func(fileanme string) (fs.FileInfo, error)
 }
 
+//NewBindingReader creates and returns and NewBindingReader object
 func NewBindingReader() *BindingFileReader {
 	return &BindingFileReader{
 		ReadDir:  ioutil.ReadDir,
@@ -28,13 +33,14 @@ func NewBindingReader() *BindingFileReader {
 	}
 }
 
+// ReadServiceBindingConfig reads binding config files and converts them into a list of ServiceBinding objects
 func (bfr *BindingFileReader) ReadServiceBindingConfig() ([]ServiceBinding, error) {
 	fs, err := bfr.Stat(bindingRootDirectory)
 	if err != nil {
 		return nil, err
 	}
 	if !fs.IsDir() {
-		return nil, errors.New(fmt.Sprintf("Service Binding root %s is not a directory.", bindingRootDirectory))
+		return nil, fmt.Errorf("service Binding root %s is not a directory", bindingRootDirectory)
 	}
 
 	lstFile, err := bfr.ReadDir(bindingRootDirectory)
