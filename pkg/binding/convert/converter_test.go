@@ -99,7 +99,7 @@ func TestMongoDBConverter_Convert(t *testing.T) {
 					Provider:    "atlas",
 					Properties: map[string]string{
 						"host":     "cluster0.ubajs.mongodb.net",
-						"username": "a-db-user",
+						"username": "#a-db-user:",
 						"password": "p#a:s[s123/w[ord@",
 						"srv":      "true",
 						"options":  "some-db-options",
@@ -107,7 +107,7 @@ func TestMongoDBConverter_Convert(t *testing.T) {
 					},
 				},
 			},
-			want: "mongodb+srv://a-db-user:p%23a%3As%5Bs123%2Fw%5Bord%40@cluster0.ubajs.mongodb.net/remote-db?some-db-options",
+			want: "mongodb+srv://%23a-db-user%3A:p%23a%3As%5Bs123%2Fw%5Bord%40@cluster0.ubajs.mongodb.net/remote-db?some-db-options",
 		},
 	}
 	for _, tt := range tests {
