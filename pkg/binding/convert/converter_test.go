@@ -1,7 +1,7 @@
 package convert
 
 import (
-	"github.com/myeung18/service-binding-client/pkg/binding/internal/fileconfig"
+	"github.com/myeung18/service-binding-client/internal/fileconfig"
 	"testing"
 )
 

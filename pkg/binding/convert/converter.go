@@ -1,53 +1,63 @@
 package convert
 
 import (
-	fileconfig "github.com/myeung18/service-binding-client/pkg/binding/internal/fileconfig"
+	"github.com/myeung18/service-binding-client/internal/fileconfig"
 	"net/url"
 	"strings"
 )
 
 const (
-	SPECIAL_CHARS = ":/?#[]@"
-	KEY_DATABASE  = "database"
-	KEY_HOST      = "host"
-	KEY_OPTIONS   = "options"
-	KEY_USERNAME  = "username"
-	KEY_PASSWORD  = "password"
-	KEY_SRV       = "srv"
+	//SpecialChars special chars used in username or password
+	SpecialChars = ":/?#[]@"
+	// KeyDatabase database instance name
+	KeyDatabase = "database"
+	// KeyHost DB host
+	KeyHost = "host"
+	// KeyOptions Connection options
+	KeyOptions = "options"
+	// KeyUsername DB User name
+	KeyUsername = "username"
+	//KeyPassword  DB User Password
+	KeyPassword = "password"
+	// KeySrv true to use DNS seed list
+	KeySrv = "srv"
 )
 
 // Converter converts and returns a ServiceBinding object to a database specific connection string
 type Converter interface {
+	// Convert converts a ServiceBinding obj to a connection string
 	Convert(sb fileconfig.ServiceBinding) string
 }
 
+// MongoDBConverter type for MongoDB
 type MongoDBConverter struct{}
 
+// Convert converts a mongodb ServiceBinding to a connection string
 func (m *MongoDBConverter) Convert(binding fileconfig.ServiceBinding) string {
 	prefix := "mongodb://"
-	if strings.EqualFold(binding.Properties[KEY_SRV], "true") {
+	if strings.EqualFold(binding.Properties[KeySrv], "true") {
 		prefix = "mongodb+srv://"
 	}
 
 	database := ""
-	if binding.Properties[KEY_OPTIONS] != "" {
-		database = "?" + binding.Properties[KEY_OPTIONS]
+	if binding.Properties[KeyOptions] != "" {
+		database = "?" + binding.Properties[KeyOptions]
 	}
-	if binding.Properties[KEY_DATABASE] != "" {
-		database = "/" + binding.Properties[KEY_DATABASE] + database
-	} else if binding.Properties[KEY_OPTIONS] != "" {
+	if binding.Properties[KeyDatabase] != "" {
+		database = "/" + binding.Properties[KeyDatabase] + database
+	} else if binding.Properties[KeyOptions] != "" {
 		database = "/" + database
 	}
 
 	return strings.Join([]string{prefix,
-		encodeIfContainsSpecialCharacters(binding.Properties[KEY_USERNAME]), ":",
-		encodeIfContainsSpecialCharacters(binding.Properties[KEY_PASSWORD]), "@",
-		binding.Properties[KEY_HOST],
+		encodeIfContainsSpecialCharacters(binding.Properties[KeyUsername]), ":",
+		encodeIfContainsSpecialCharacters(binding.Properties[KeyPassword]), "@",
+		binding.Properties[KeyHost],
 		database}, "")
 }
 
 func encodeIfContainsSpecialCharacters(userNameOrPassword string) string {
-	if strings.ContainsAny(userNameOrPassword, SPECIAL_CHARS) {
+	if strings.ContainsAny(userNameOrPassword, SpecialChars) {
 		return url.QueryEscape(userNameOrPassword)
 	}
 	return userNameOrPassword

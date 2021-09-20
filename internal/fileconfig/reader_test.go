@@ -57,8 +57,7 @@ func TestBindingFileReader_ReadServiceBindingConfig(t *testing.T) {
 						return []byte(filename), nil
 					}
 				},
-				Stat:
-				func(filename string) (fs.FileInfo, error) {
+				Stat: func(filename string) (fs.FileInfo, error) {
 					if filename == "/bindings" {
 						return fakeFile{fn: filename}, nil //it is a file, error
 					}
@@ -96,8 +95,7 @@ func TestBindingFileReader_ReadServiceBindingConfig(t *testing.T) {
 						return []byte(filename), nil
 					}
 				},
-				Stat:
-				func(filename string) (fs.FileInfo, error) {
+				Stat: func(filename string) (fs.FileInfo, error) {
 					if filename == "/bindings" {
 						return fakeDir{fn: filename}, nil
 					}
