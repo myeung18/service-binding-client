@@ -90,6 +90,25 @@ func TestMongoDBConverter_Convert(t *testing.T) {
 			},
 			want: "mongodb+srv://a-db-user:password@example.com:10011",
 		},
+		{
+			name: "Correct connection string returned - password contains special characters",
+			args: args{
+				binding: fileconfig.ServiceBinding{
+					Name:        "local",
+					BindingType: "mongodb",
+					Provider:    "atlas",
+					Properties: map[string]string{
+						"host":     "cluster0.ubajs.mongodb.net",
+						"username": "a-db-user",
+						"password": "p#a:s[s123/w[ord@",
+						"srv":      "true",
+						"options":  "some-db-options",
+						"database": "remote-db",
+					},
+				},
+			},
+			want: "mongodb+srv://a-db-user:p%23a%3As%5Bs123%2Fw%5Bord%40@cluster0.ubajs.mongodb.net/remote-db?some-db-options",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -2,7 +2,18 @@ package convert
 
 import (
 	fileconfig "github.com/myeung18/service-binding-client/pkg/binding/internal/fileconfig"
+	"net/url"
 	"strings"
+)
+
+const (
+	SPECIAL_CHARS = ":/?#[]@"
+	KEY_DATABASE  = "database"
+	KEY_HOST      = "host"
+	KEY_OPTIONS   = "options"
+	KEY_USERNAME  = "username"
+	KEY_PASSWORD  = "password"
+	KEY_SRV       = "srv"
 )
 
 // Converter converts and returns a ServiceBinding object to a database specific connection string
@@ -14,25 +25,32 @@ type MongoDBConverter struct{}
 
 func (m *MongoDBConverter) Convert(binding fileconfig.ServiceBinding) string {
 	prefix := "mongodb://"
-	if binding.Properties["srv"] == "true" {
+	if strings.EqualFold(binding.Properties[KEY_SRV], "true") {
 		prefix = "mongodb+srv://"
 	}
 
 	database := ""
-	if binding.Properties["options"] != "" {
-		database = "?" + binding.Properties["options"]
+	if binding.Properties[KEY_OPTIONS] != "" {
+		database = "?" + binding.Properties[KEY_OPTIONS]
 	}
-	if binding.Properties["database"] != "" {
-		database = "/" + binding.Properties["database"] + database
-	} else if binding.Properties["options"] != "" {
+	if binding.Properties[KEY_DATABASE] != "" {
+		database = "/" + binding.Properties[KEY_DATABASE] + database
+	} else if binding.Properties[KEY_OPTIONS] != "" {
 		database = "/" + database
 	}
 
 	return strings.Join([]string{prefix,
-		binding.Properties["username"], ":",
-		binding.Properties["password"], "@",
-		binding.Properties["host"],
+		encodeIfContainsSpecialCharacters(binding.Properties[KEY_USERNAME]), ":",
+		encodeIfContainsSpecialCharacters(binding.Properties[KEY_PASSWORD]), "@",
+		binding.Properties[KEY_HOST],
 		database}, "")
+}
+
+func encodeIfContainsSpecialCharacters(userNameOrPassword string) string {
+	if strings.ContainsAny(userNameOrPassword, SPECIAL_CHARS) {
+		return url.QueryEscape(userNameOrPassword)
+	}
+	return userNameOrPassword
 }
 
 // GetMongodbConnectionString returns mongoDB connection info. in a formatted string
