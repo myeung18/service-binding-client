@@ -1,79 +1,57 @@
 package convert
 
 import (
+	"fmt"
 	"github.com/myeung18/service-binding-client/internal/fileconfig"
-	"net/url"
-	"strings"
 )
 
 const (
-	//SpecialChars special chars used in username or password
-	SpecialChars = ":/?#[]@"
-	// KeyDatabase database instance name
-	KeyDatabase = "database"
-	// KeyHost DB host
-	KeyHost = "host"
-	// KeyOptions Connection options
-	KeyOptions = "options"
-	// KeyUsername DB User name
-	KeyUsername = "username"
-	//KeyPassword  DB User Password
-	KeyPassword = "password"
-	// KeySrv true to use DNS seed list
-	KeySrv = "srv"
+	//specialChars special chars used in username or password
+	specialChars = ":/?#[]@"
+	// keyDatabase DB instance name
+	keyDatabase = "database"
+	// keyHost DB host
+	keyHost = "host"
+	// keyPort DB port
+	keyPort = "port"
+	// keyOptions Connection options
+	keyOptions = "options"
+	// keyUsername DB User name
+	keyUsername = "username"
+	// keyPassword  DB User Password
+	keyPassword = "password"
+	// keySrv true to use DNS seed list
+	keySrv = "srv"
+	// mongodb
+	mongodb = "mongodb"
+	// postgresql
+	postgreSql = "postgresql"
 )
 
-// Converter converts and returns a ServiceBinding object to a database specific connection string
+// Converter converts and returns a ServiceBinding object to a DSN connection string
 type Converter interface {
-	// Convert converts a ServiceBinding obj to a connection string
+	// Convert converts a ServiceBinding obj to a connection string in DSN format
 	Convert(sb fileconfig.ServiceBinding) string
 }
 
-// MongoDBConverter type for MongoDB
-type MongoDBConverter struct{}
-
-// Convert converts a mongodb ServiceBinding to a connection string
-func (m *MongoDBConverter) Convert(binding fileconfig.ServiceBinding) string {
-	prefix := "mongodb://"
-	if strings.EqualFold(binding.Properties[KeySrv], "true") {
-		prefix = "mongodb+srv://"
-	}
-
-	database := ""
-	if binding.Properties[KeyOptions] != "" {
-		database = "?" + binding.Properties[KeyOptions]
-	}
-	if binding.Properties[KeyDatabase] != "" {
-		database = "/" + binding.Properties[KeyDatabase] + database
-	} else if binding.Properties[KeyOptions] != "" {
-		database = "/" + database
-	}
-
-	return strings.Join([]string{prefix,
-		encodeIfContainsSpecialCharacters(binding.Properties[KeyUsername]), ":",
-		encodeIfContainsSpecialCharacters(binding.Properties[KeyPassword]), "@",
-		binding.Properties[KeyHost],
-		database}, "")
-}
-
-func encodeIfContainsSpecialCharacters(userNameOrPassword string) string {
-	if strings.ContainsAny(userNameOrPassword, SpecialChars) {
-		return url.QueryEscape(userNameOrPassword)
-	}
-	return userNameOrPassword
-}
-
-// GetMongodbConnectionString returns mongoDB connection info. in a formatted string
-func GetMongodbConnectionString(bindingType string) (string, error) {
-	//get the binding available from file system
-	bindingFileReader := fileconfig.NewBindingReader()
-	serviceBindings, err := bindingFileReader.ReadServiceBindingConfig()
+// GetPostgreSQLConnectionString converts and returns the BindingService to a PostgreSQL DSN connection string
+func GetPostgreSQLConnectionString() (string, error) {
+	dbBinding, err := singleMatchingByType(postgreSql)
 	if err != nil {
 		return "", err
 	}
-	mongoBinding := singleMatchingByType(bindingType, serviceBindings)
-	converter := MongoDBConverter{}
-	return converter.Convert(mongoBinding), nil
+	converter := &PostgreSQLConnectionStringConverter{}
+	return converter.Convert(dbBinding), nil
+}
+
+// GetMongoDBConnectionString converts and returns a BindingService to a MongoDB DSN connection string
+func GetMongoDBConnectionString() (string, error) {
+	dbBinding, err := singleMatchingByType(mongodb)
+	if err != nil {
+		return "", err
+	}
+	converter := &MongoDBConverter{}
+	return converter.Convert(dbBinding), nil
 }
 
 //
@@ -90,17 +68,17 @@ func matchingByType(bindingType string, serviceBindings []fileconfig.ServiceBind
 	return res
 }
 
-func singleMatchingByType(bindingType string, serviceBindings []fileconfig.ServiceBinding) fileconfig.ServiceBinding {
-	res := fileconfig.ServiceBinding{}
-	if len(serviceBindings) == 0 {
-		return res
+func singleMatchingByType(bindingType string) (fileconfig.ServiceBinding, error) {
+	bindingFileReader := fileconfig.NewBindingReader()
+	serviceBindings, err := bindingFileReader.ReadServiceBindingConfig()
+	var dbBinging fileconfig.ServiceBinding
+	if err != nil {
+		return dbBinging, err
 	}
 	matchingBindings := matchingByType(bindingType, serviceBindings)
 	if len(matchingBindings) == 0 {
-		return res
+		return dbBinging, fmt.Errorf("no service binding config found for %s", bindingType)
 	}
 	//return the first one - should we return the 1st one after sort, or other selection criteria?
-	return matchingBindings[0]
+	return matchingBindings[0], nil
 }
-
-//PostgreSQL
