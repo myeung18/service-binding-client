@@ -17,11 +17,16 @@ import (
 )
 
 // call
-string, err := convert.GetMongodbConnectionString("mongodb")
+connString, err := convert.GetMongoDBConnectionString()
 if err != nil {
-    fmt.Println(err)
+    panic(err)
 }
-fmt.Println(string)
+fmt.Println(connString)
+connString, err = convert.GetPostgreSQLConnectionString()
+if err != nil {
+    panic(err)
+}
+fmt.Println(connString))
 ```
   
 run locally
