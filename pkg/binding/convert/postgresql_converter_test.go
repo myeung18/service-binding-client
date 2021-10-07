@@ -16,7 +16,7 @@ func TestPostgreSQLConnectionStringConverter_Convert(t *testing.T) {
 		want string
 	}{
 		{
-			name: "Correct connection string returned",
+			name: "Correct connection string returned with empty options",
 			args: args{
 				binding: fileconfig.ServiceBinding{
 					Name:        "local",
@@ -27,7 +27,7 @@ func TestPostgreSQLConnectionStringConverter_Convert(t *testing.T) {
 						"username": "a-db-user",
 						"password": "password",
 						"srv":      "true",
-						"options":  "some-db-options",
+						"options":  "",
 						"database": "local-db",
 					},
 				},
@@ -45,12 +45,12 @@ func TestPostgreSQLConnectionStringConverter_Convert(t *testing.T) {
 						"host":     "example.com:10011",
 						"username": "a-db-user",
 						"srv":      "true",
-						"options":  "some-db-options",
+						"options":  "sslmode=disable&connect_timeout=10",
 						"database": "local-db",
 					},
 				},
 			},
-			want: "host=example.com:10011 user=a-db-user dbname=local-db",
+			want: "host=example.com:10011 user=a-db-user dbname=local-db sslmode=disable connect_timeout=10",
 		},
 		{
 			name: "Correct connection string returned with special char escaping",
@@ -64,7 +64,45 @@ func TestPostgreSQLConnectionStringConverter_Convert(t *testing.T) {
 						"username": "a-db-user",
 						"password": "password'",
 						"srv":      "true",
-						"options":  "some-db-options",
+						"options":  "some-db-options_that_is_invalid",
+						"database": "local-db",
+					},
+				},
+			},
+			want: "host=example.com:10011 user=a-db-user password=password\\' dbname=local-db",
+		},
+		{
+			name: "Invalid_or_incomplete options are ignored",
+			args: args{
+				binding: fileconfig.ServiceBinding{
+					Name:        "local",
+					BindingType: "postgresql",
+					Provider:    "Crunchy Bridges",
+					Properties: map[string]string{
+						"host":     "example.com:10011",
+						"username": "a-db-user",
+						"password": "password'",
+						"srv":      "true",
+						"options":  "option1=value1&option2",
+						"database": "local-db",
+					},
+				},
+			},
+			want: "host=example.com:10011 user=a-db-user password=password\\' dbname=local-db option1=value1",
+		},
+		{
+			name: "Options contain an invalid option - with no key",
+			args: args{
+				binding: fileconfig.ServiceBinding{
+					Name:        "local",
+					BindingType: "postgresql",
+					Provider:    "Crunchy Bridges",
+					Properties: map[string]string{
+						"host":     "example.com:10011",
+						"username": "a-db-user",
+						"password": "password'",
+						"srv":      "true",
+						"options":  "=value1&option2=",
 						"database": "local-db",
 					},
 				},
